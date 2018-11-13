@@ -66,6 +66,8 @@ class SignalScaningEngine(object):
         self.dt = None      # 最新的时间
         self.logList = []               # 日志记录  
 
+        self.datatype = self.DB_DATA_TYPE
+
         # 日志引擎实例
         self.logEngine = None
         self.initLogEngine()           

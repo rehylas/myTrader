@@ -9,7 +9,11 @@ from vnpy.trader.vtConstant import (DIRECTION_LONG, DIRECTION_SHORT,
                                     OFFSET_OPEN, OFFSET_CLOSE,
                                     STATUS_ALLTRADED, STATUS_CANCELLED, STATUS_REJECTED)
 from vnpy.trader.uiQt import QtWidgets
-#from vnpy.trader.app.signalMonitor.generateDataTemp import PotGenerator
+
+from vnpy.trader.app.dataGenerate.jumpGenerator import JumpGenerator
+from vnpy.trader.app.dataGenerate.lineGenerator import LineGenerator
+
+
 from vnpy.trader.app.signalMonitor.signalTemplate import SignalTemplate
 from vnpy.trader.app.signalMonitor.uiSignalWidget import SignalWidgetTemp, QtWidgets
 from vnpy.trader.vtConstant import EMPTY_UNICODE, EMPTY_STRING, EMPTY_FLOAT, EMPTY_INT
@@ -28,6 +32,8 @@ class BigTradeSignal(SignalTemplate):
     templateName = u'大单监控'
     vtSymbol = EMPTY_STRING
     totalVolume = 100
+    jumps = None
+    lines = None
 
     #----------------------------------------------------------------------
     def __init__(self, engine, setting, signalName): 
@@ -52,6 +58,11 @@ class BigTradeSignal(SignalTemplate):
         self.price = 0.0
 
         self.lastTick = None
+
+        jumpSetting ={ 'jumpsize':10 }
+        lineSetting ={ 'linesize':10 }
+        self.jumps =  JumpGenerator(self.onJumpData, jumpSetting)
+        self.lines =  LineGenerator(self.onLineData, lineSetting)
         
         self.subscribe(self.vtSymbol)
         self.paramEvent()
@@ -61,7 +72,10 @@ class BigTradeSignal(SignalTemplate):
     def onTick(self, tick):
         if( self.lastTick != None ):
             if( tick.lastVolume == 0  ):
-                tick.lastVolume = tick.volume - self.lastTick.volume            
+                tick.lastVolume = tick.volume - self.lastTick.volume   
+
+        self.jumps.updateTick( tick )  
+        self.lines.updateTick( tick )                
 
         if( tick.lastVolume >= self.totalVolume ):
             msg = u'%s 发现大单，代码：%s， 单量:  %d' %(tick.time, self.vtSymbol,  tick.lastVolume  )
@@ -72,8 +86,18 @@ class BigTradeSignal(SignalTemplate):
         self.varEvent()         
         return 
  
-      
-        
+    #----------------------------------------------------------------------
+    def onJumpData(self, jump):
+        """"""
+        print '%s onJumpData %.1f %d %.1f'%( jump.time, jump.close,jump.type,jump.close-jump.open)
+        pass      
+
+    #----------------------------------------------------------------------
+    def onLineData(self, line):
+        """"""
+        print '%s onLineData %.1f %d %.1f'%( line.time, line.close,line.type,line.close-line.open)
+        pass     
+
     #----------------------------------------------------------------------
     def onTrade(self, trade):
         """"""
