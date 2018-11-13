@@ -108,6 +108,14 @@ class AlgoEngine(object):
         self.algoDict[algo.algoName] = algo
         
         return algo.algoName
+
+    #----------------------------------------------------------------------
+    def getAlgo(self, algoName):
+        """查询算法"""
+        if algoName in self.algoDict:
+            return self.algoDict[algoName]
+        return None    
+        
     
     #----------------------------------------------------------------------
     def stopAlgo(self, algoName):

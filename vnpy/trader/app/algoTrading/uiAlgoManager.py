@@ -54,6 +54,55 @@ class StopButton(QtWidgets.QPushButton):
         self.setStyleSheet("color:black;background-color:grey")
 
 
+
+########################################################################
+class PauseButton(QtWidgets.QPushButton):
+    """暂停算法用按钮"""
+
+    #----------------------------------------------------------------------
+    def __init__(self, algoEngine, algoName=''):
+        """Constructor"""
+        super(PauseButton, self).__init__()
+        
+        self.algoEngine = algoEngine
+        self.algoName = algoName
+        
+        self.setStyleSheet("color:black;background-color:yellow")
+        
+        if algoName:
+            self.setText(u'暂停')
+            self.clicked.connect(self.pauseWakeupAlgo)
+        else:
+            self.setText(u'暂停全部算法')
+            self.clicked.connect(self.pauseAll)
+
+    #----------------------------------------------------------------------
+    def pauseWakeupAlgo(self):
+        """暂停唤醒某一算法"""
+        algo = self.algoEngine.getAlgo(self.algoName)
+        if algo == None:
+            return
+        if(algo.paused)  :  
+            self.setText(u'暂停')
+            algo.wakeup()
+        else:
+            self.setText(u'唤醒')   
+            algo.pause()         
+        pass
+ 
+    #----------------------------------------------------------------------
+    def pauseAll(self):
+        """停止全部算法"""
+        self.algoEngine.pauseAll()
+    
+    #----------------------------------------------------------------------
+    def disable(self):
+        """禁用按钮"""
+        self.setEnabled(False)
+        self.setStyleSheet("color:black;background-color:grey")
+
+
+
 AlgoCell = QtWidgets.QTableWidgetItem
 
 
@@ -113,19 +162,23 @@ class AlgoStatusMonitor(QtWidgets.QTableWidget):
         self.insertRow(0)
         
         buttonStop = StopButton(self.algoEngine, algoName)
+        buttonPause = PauseButton(self.algoEngine, algoName)
         cellName = AlgoCell(algoName)
         cellParam = AlgoCell()
         cellVar = AlgoCell()
         
         self.setCellWidget(0, 0, buttonStop)
-        self.setItem(0, 1, cellName)
-        self.setItem(0, 2, cellParam)
-        self.setItem(0, 3, cellVar)
+        self.setCellWidget(0, 1, buttonPause)
+
+        self.setItem(0, 2, cellName)
+        self.setItem(0, 3, cellParam)
+        self.setItem(0, 4, cellVar)
         
         self.cellDict[algoName] = {
             'param': cellParam,
             'var': cellVar,
-            'button': buttonStop
+            'button': buttonStop,
+            'button2': buttonPause
         }
         
         if self.mode == self.MODE_HISTORY:

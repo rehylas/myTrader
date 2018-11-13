@@ -17,6 +17,7 @@ class AlgoTemplate(object):
     
     timestamp = ''
     count = 0
+    paused =  False
     
     @classmethod
     #----------------------------------------------------------------------
@@ -87,7 +88,20 @@ class AlgoTemplate(object):
         self.cancelAll()
         
         self.onStop()
-        
+
+    #----------------------------------------------------------------------
+    def pause(self):
+   
+        self.paused =  True    
+        self.onPause()
+
+    #----------------------------------------------------------------------
+    def wakeup(self):
+    
+        self.paused =  False    
+        self.onWakeup()        
+ 
+
     #----------------------------------------------------------------------
     def onTick(self, tick):
         """"""
@@ -113,6 +127,16 @@ class AlgoTemplate(object):
         """"""
         pass
     
+    #----------------------------------------------------------------------
+    def onPause(self):
+        """"""
+        pass
+
+    #----------------------------------------------------------------------
+    def onWakeup(self):
+        """"""
+        pass
+
     #----------------------------------------------------------------------
     def subscribe(self, vtSymbol):
         """"""

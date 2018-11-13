@@ -242,6 +242,9 @@ class CaodanAlgo(AlgoTemplate):
         dl = self.potGenor.dataSet
         n = len(dl)
 
+        if( self.paused  == True):
+            return False
+            
         #debug
         # if(n>=3):
         #     return True
@@ -250,10 +253,10 @@ class CaodanAlgo(AlgoTemplate):
             return False
         newPotData = dl[n-1]
         if( newPotData.type == POT_TYPE_DOWN and self.direction != DIRECTION_LONG ):
-            return false   
+            return False   
                      
         if( newPotData.type == POT_TYPE_UP and   self.direction != DIRECTION_SHORT  ):
-            return false   
+            return False   
 
         if(newPotType == POT_TYPE_DOWN):
             if( dl[-1].close >= dl[-3].close  and dl[-3].close >= dl[-5].close and dl[-2].close >= dl[-4].close  ):
