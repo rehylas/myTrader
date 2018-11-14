@@ -4,7 +4,7 @@ from __future__ import division
 from datetime import datetime
 
 from vnpy.trader.vtConstant import STATUS_NOTTRADED, STATUS_PARTTRADED, STATUS_UNKNOWN
-
+from vnpy.trader.vtObject import VtSignal
 
 # 活动委托状态
 STATUS_ACTIVE = [STATUS_NOTTRADED, STATUS_PARTTRADED, STATUS_UNKNOWN]
@@ -40,6 +40,9 @@ class SignalTemplate(object):
         self.active = True
         self.signalName = signalName
         self.activeOrderDict = {}  # vtOrderID:order
+
+        self.signal  = VtSignal() 
+        self.signal.signalName = signalName
     
     #----------------------------------------------------------------------
     def updateTick(self, tick):
@@ -187,8 +190,19 @@ class SignalTemplate(object):
         """输出日志"""
         self.engine.writeLog(content  )
         
-        
+    #----------------------------------------------------------------------    
     def sendSignalMsg(self, signalMsg):
         if( self.engine.mainEngine ):
             sub = u'交易信号:%s '%( self.templateName  )
             self.engine.mainEngine.sendMsg( sub , signalMsg ) 
+
+    #----------------------------------------------------------------------
+    def save2db( self ):
+        """保存到数据库"""
+        #save self.signal   to db
+        if( self.engine.mainEngine ):
+            self.engine.save2db( self.signal )
+            pass
+            # sub = u'交易信号:%s '%( self.templateName  )
+            # self.engine.mainEngine.sendMsg( sub , signalMsg )         
+        pass        

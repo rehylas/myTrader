@@ -373,15 +373,13 @@ class VtSignal(VtBaseData):
     def __init__(self):
         """Constructor"""
         super(VtSignal, self).__init__()
-        
+        self.signalName = EMPTY_STRING
         # 代码相关
-        self.symbol = EMPTY_STRING              # 合约代码
-        self.exchange = EMPTY_STRING            # 交易所代码
-        self.vtSymbol = EMPTY_STRING            # 合约在vt系统中的唯一代码，通常是 合约代码.交易所代码
-        
+        self.vtSymbol = EMPTY_STRING            # 合约代码
+
         # 成交数据
         self.lastPrice = EMPTY_FLOAT            # 最新成交价
-        self.lastVolume = EMPTY_INT             # 最新成交量
+        #self.lastVolume = EMPTY_INT             # 最新成交量
         self.time = EMPTY_STRING                # 时间 11:20:56.5
         self.date = EMPTY_STRING                # 日期 20151009
         self.datetime = None                    # python的datetime时间对象

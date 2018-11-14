@@ -111,6 +111,17 @@ class GoodPotSignal(SignalTemplate):
             d ={ "vtSymbol":self.vtSymbol,"datetime":tick.datetime, "type":self.type, "price":tick.lastPrice  }
             self.engine.putSignalEvent(self,  d)
 
+            # 生成信号数据
+            self.signal.datetime = tick.datetime
+            self.signal.date = tick.date
+            self.signal.time = tick.time
+            self.signal.lastPrice = tick.lastPrice
+            self.signal.level = 1
+            self.signal.msg = msg
+            self.signal.vtSymbol = self.vtSymbol
+        
+            self.save2db()
+
         self.lastTick =  tick
         # 更新变量
         self.varEvent()         

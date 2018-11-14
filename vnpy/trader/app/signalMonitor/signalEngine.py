@@ -370,6 +370,12 @@ class SignalEngine(object):
         self.rpcServer.start()
         self.writeLog(u'算法交易RPC服务启动成功，REP端口:%s，PUB端口:%s' %(repPort, pubPort))
 
+    #----------------------------------------------------------------------
+    def save2db(self,  signal):
+        """保存到数据库"""        
+        self.mainEngine.dbInsert(  SIGNALTRADING_DB_NAME, signal.vtSymbol, signal.__dict__ )  
+        pass
+   
 
 ########################################################################
 class SignalRpcServer(RpcServer):
