@@ -1,5 +1,4 @@
 # encoding: UTF-8
-
 from __future__ import division
 from collections import OrderedDict
 
@@ -119,8 +118,9 @@ class GoodPotSignal(SignalTemplate):
             self.signal.level = 1
             self.signal.msg = msg
             self.signal.vtSymbol = self.vtSymbol
-        
-            self.save2db()
+
+            self.onSignal()
+ 
 
         self.lastTick =  tick
         # 更新变量

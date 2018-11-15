@@ -81,6 +81,18 @@ class BigTradeSignal(SignalTemplate):
             msg = u'%s 发现大单，代码：%s， 单量:  %d' %(tick.time, self.vtSymbol,  tick.lastVolume  )
             self.writeLog(msg)
             print msg
+
+            # 生成信号数据
+            self.signal.datetime = tick.datetime
+            self.signal.date = tick.date
+            self.signal.time = tick.time
+            self.signal.lastPrice = tick.lastPrice
+            self.signal.level = 1
+            self.signal.msg = msg
+            self.signal.vtSymbol = self.vtSymbol
+
+            self.onSignal()
+                        
         self.lastTick =  tick
         # 更新变量
         self.varEvent()         

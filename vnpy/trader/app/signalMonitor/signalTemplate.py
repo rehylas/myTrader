@@ -124,6 +124,13 @@ class SignalTemplate(object):
         self.writeLog(u'%s策略停止' %self.name)
         #self.putEvent()
 
+
+    #----------------------------------------------------------------------
+    def onSignal(self):
+        #有信号生成
+        self.save2db( )
+        pass    
+
     #----------------------------------------------------------------------
     def subscribe(self, vtSymbol):
         """"""

@@ -373,7 +373,8 @@ class SignalEngine(object):
     #----------------------------------------------------------------------
     def save2db(self,  signal):
         """保存到数据库"""        
-        self.mainEngine.dbInsert(  SIGNALTRADING_DB_NAME, signal.vtSymbol, signal.__dict__ )  
+        data = signal.__dict__.copy() 
+        self.mainEngine.dbInsert(  SIGNALTRADING_DB_NAME, signal.vtSymbol, data )  
         pass
    
 

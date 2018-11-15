@@ -230,6 +230,8 @@ class MainEngine(object):
     def dbInsert(self, dbName, collectionName, d):
         """向MongoDB中插入数据，d是具体数据"""
         if self.dbClient:
+            #debug
+            # print 'dbInsert ', dbName, collectionName
             db = self.dbClient[dbName]
             collection = db[collectionName]
             try:
