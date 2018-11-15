@@ -232,7 +232,16 @@ class MainEngine(object):
         if self.dbClient:
             db = self.dbClient[dbName]
             collection = db[collectionName]
-            collection.insert_one(d)
+            try:
+                collection.insert_one(d)
+            except Exception, e:
+                txt = 'dbInsert error:%s'%(e.message)
+                print '---------------------------------'
+                print  txt
+                print '---------------------------------'                
+                self.writeLog( txt )
+
+                pass
         else:
             self.writeLog(text.DATA_INSERT_FAILED)
     
