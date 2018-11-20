@@ -43,6 +43,7 @@ class SignalTemplate(object):
 
         self.signal  = VtSignal() 
         self.signal.signalName = signalName
+        
     
     #----------------------------------------------------------------------
     def updateTick(self, tick):

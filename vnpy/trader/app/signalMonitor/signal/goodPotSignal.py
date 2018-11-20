@@ -118,6 +118,8 @@ class GoodPotSignal(SignalTemplate):
             self.signal.level = 1
             self.signal.msg = msg
             self.signal.vtSymbol = self.vtSymbol
+            self.signal.type = self.type
+            self.signal.code ='goodpot'
 
             self.onSignal()
  

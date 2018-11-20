@@ -373,7 +373,8 @@ class VtSignal(VtBaseData):
     def __init__(self):
         """Constructor"""
         super(VtSignal, self).__init__()
-        self.signalName = EMPTY_STRING
+        self.signalName = EMPTY_STRING          #中文
+        self.code = EMPTY_STRING                #英文
         # 代码相关
         self.vtSymbol = EMPTY_STRING            # 合约代码
 
@@ -388,6 +389,7 @@ class VtSignal(VtBaseData):
         self.type  = EMPTY_INT                  # 类型             
         self.msg   = EMPTY_STRING               # 描述信息     
         self.level = EMPTY_INT                  # 级别   
+        
         
    
         
