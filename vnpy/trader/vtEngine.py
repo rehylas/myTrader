@@ -507,6 +507,12 @@ class DataEngine(object):
         contract = event.dict_['data']
         self.contractDict[contract.vtSymbol] = contract
         self.contractDict[contract.symbol] = contract       # 使用常规代码（不包括交易所）可能导致重复
+
+        #debug  
+        # print 'onContract:'
+        # if( contract.__dict__[u'productClass']  == u'期货' ):
+        #     print contract.__dict__
+        #     print contract.__dict__[u'name']        
     
     #----------------------------------------------------------------------
     def processOrderEvent(self, event):

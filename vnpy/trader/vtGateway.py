@@ -111,6 +111,11 @@ class VtGateway(object):
         event1 = Event(type_=EVENT_CONTRACT)
         event1.dict_['data'] = contract
         self.eventEngine.put(event1)        
+        #debug  
+        # print 'onContract:'
+        # if( contract.__dict__[u'productClass']  == u'期货' ):
+        #     print contract.__dict__
+        #     print contract.__dict__[u'name']
     
     #----------------------------------------------------------------------
     def connect(self):

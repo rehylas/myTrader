@@ -9,6 +9,7 @@
 import json
 import csv
 import os
+from string import digits
 import copy
 import traceback
 from collections import OrderedDict
@@ -226,6 +227,42 @@ class DrEngine(object):
         # 记录新的时间
         self.lastTimerTime = currentTime
     
+    
+
+    #----------------------------------------------------------------------
+    def processContractEvent(self, event ):
+        """处理合约事件"""
+        contract = event.dict_['data']
+        if( contract.__dict__[u'productClass']  == u'期货' ):            
+            tempContract = contract.__dict__   
+            
+            symbolInfo ={'name':u'','exchange':'','symbol':'','priceTick':1.0,'expiryDate':'',\
+            'productClass':u'', 'vtSymbol':'', 'size':10 }
+            #获取类型，去除数字
+            stype = tempContract['symbol']
+            for i in range(10):
+                stype = stype.replace(str(i),'')
+            symbolInfo['type'] = stype
+            symbolInfo['name'] = tempContract['name'] 
+            symbolInfo['exchange'] = tempContract['exchange'] 
+            symbolInfo['priceTick'] = tempContract['priceTick'] 
+            symbolInfo['symbol'] = tempContract['symbol'] 
+            symbolInfo['expiryDate'] = tempContract['expiryDate'] 
+            symbolInfo['productClass'] = tempContract['productClass'] 
+            symbolInfo['vtSymbol'] = tempContract['vtSymbol'] 
+            symbolInfo['size'] = tempContract['size'] 
+            #self.insertData(BASE_DB_NAME, 'Symbols', symbolInfo )
+            try:
+                self.mainEngine.dbInsert(BASE_DB_NAME, 'Symbols', symbolInfo )
+            except DuplicateKeyError:
+                self.writeDrLog(u'键值重复插入失败，报错信息：%s' %traceback.format_exc())            
+
+        # #debug  
+        # print 'onContract:'
+        # if( contract.__dict__[u'productClass']  == u'期货' ):
+        #     print contract.__dict__
+        #     print contract.__dict__[u'name']   
+
     #----------------------------------------------------------------------
     def onTick(self, tick):
         """Tick更新"""
@@ -268,6 +305,7 @@ class DrEngine(object):
         """注册事件监听"""
         self.eventEngine.register(EVENT_TICK, self.procecssTickEvent)
         self.eventEngine.register(EVENT_TIMER, self.processTimerEvent)
+        self.eventEngine.register(EVENT_CONTRACT, self.processContractEvent)
  
     #----------------------------------------------------------------------
     def insertData(self, dbName, collectionName, data):
@@ -315,4 +353,6 @@ class DrEngine(object):
         event = Event(type_=EVENT_DATARECORDER_LOG)
         event.dict_['data'] = log
         self.eventEngine.put(event)   
+    
+
     
