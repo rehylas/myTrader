@@ -28,6 +28,7 @@ class VtLineData(object):
     def __init__(self):
         """Constructor"""
         super(VtLineData, self).__init__(  )
+        self.vtSymbol = EMPTY_STRING
         self.datetime = EMPTY_STRING
         self.time = EMPTY_STRING
         self.open = EMPTY_FLOAT
@@ -35,11 +36,13 @@ class VtLineData(object):
         self.dim = EMPTY_FLOAT
         self.type = EMPTY_INT
         self.vol = EMPTY_INT
+        self.datatype = 'line'
 
 ########################################################################
 class LineGenerator(DataGenerator):
     """
     数据生成器基类
+    setting["linesize"]
     """
 
     #----------------------------------------------------------------------
@@ -53,6 +56,13 @@ class LineGenerator(DataGenerator):
         self.LineSize = setting["linesize"]
  
         self.lastTick = None        # 上一TICK缓存对象
+
+    #----------------------------------------------------------------------
+    def clearTmepData(self):
+        self.oneData = VtLineData() 
+        self.dataSet =[] 
+        self.lastTick = None
+        pass
 
     #----------------------------------------------------------------------
     def updateTick(self, tick):
@@ -100,6 +110,7 @@ class LineGenerator(DataGenerator):
         #print tick.time, self.oneData.dim ,self.LineSize
 
         if( self.oneData.dim >=  self.LineSize):
+            self.oneData.vtSymbol = tick.vtSymbol 
             self.oneData.datetime = tick.datetime
             self.oneData.time = tick.time
             self.oneData.close = tick.lastPrice
@@ -115,6 +126,7 @@ class LineGenerator(DataGenerator):
 
 
         if( self.oneData.dim <=  -self.LineSize):
+            self.oneData.vtSymbol = tick.vtSymbol 
             self.oneData.datetime = tick.datetime
             self.oneData.time = tick.time
             self.oneData.close = tick.lastPrice

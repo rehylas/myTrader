@@ -24,6 +24,11 @@ from vnpy.trader.vtFunction import todayDate, getJsonPath
 from vnpy.trader.vtObject import VtSubscribeReq, VtLogData, VtBarData, VtTickData
 from vnpy.trader.app.ctaStrategy.ctaTemplate import BarGenerator
 
+from vnpy.trader.app.dataGenerate.jumpGenerator import JumpGenerator
+from vnpy.trader.app.dataGenerate.lineGenerator import LineGenerator
+from vnpy.trader.app.dataGenerate.potGenerator import PotGenerator
+#, LineGenerator, PotGenerator
+
 from .drBase import *
 from .language import text
 
@@ -52,6 +57,16 @@ class DrEngine(object):
         
         # K线合成器字典
         self.bgDict = {}
+
+        # Line线合成器字典
+        self.linegDict = {}      
+             
+
+        # Jump线合成器字典
+        self.jumpgDict = {}  
+
+        # Pot线合成器字典
+        self.potgDict = {}                      
         
         # 配置字典
         self.settingDict = OrderedDict()
@@ -138,18 +153,26 @@ class DrEngine(object):
                 for setting in l:
                     symbol = setting[0]
                     gateway = setting[1]
+                    exDataSetting ={"potsize":10,"linesize":10,"jumpsize":10}
+                    if( len(setting) >=5 ):
+                        exDataSetting["potsize"] = setting[2]
+                        exDataSetting["linesize"] = setting[3]
+                        exDataSetting["jumpsize"] = setting[4]
+                        pass
+ 
+
                     vtSymbol = symbol
 
                     req = VtSubscribeReq()
                     req.symbol = symbol                    
 
-                    if len(setting)>=3:
-                        req.exchange = setting[2]
-                        vtSymbol = '.'.join([symbol, req.exchange])
+                    # if len(setting)>=3:
+                    #     req.exchange = setting[2]
+                    #     vtSymbol = '.'.join([symbol, req.exchange])
 
-                    if len(setting)>=5:
-                        req.currency = setting[3]
-                        req.productClass = setting[4]                    
+                    # if len(setting)>=5:
+                    #     req.currency = setting[3]
+                    #     req.productClass = setting[4]                    
 
                     self.mainEngine.subscribe(req, gateway)  
                     
@@ -167,6 +190,11 @@ class DrEngine(object):
                         
                     # 创建BarManager对象
                     self.bgDict[vtSymbol] = BarGenerator(self.onBar)
+
+                    # 创建各种扩展数据生成器实例 
+                    self.linegDict[vtSymbol] = JumpGenerator(self.onExdata, exDataSetting)  
+                    self.jumpgDict[vtSymbol] = LineGenerator(self.onExdata, exDataSetting) 
+                    self.potgDict[vtSymbol]  = PotGenerator(self.onExdata, exDataSetting)                   
 
             # 主力合约记录配置
             if 'active' in drSetting:
@@ -196,6 +224,18 @@ class DrEngine(object):
         bm = self.bgDict.get(vtSymbol, None)
         if bm:
             bm.updateTick(tick)
+
+        # 生成各种扩展数据
+        exDataGen = self.linegDict.get(vtSymbol, None)
+        if exDataGen:
+            exDataGen.updateTick(tick)
+        exDataGen = self.jumpgDict.get(vtSymbol, None)
+        if exDataGen:
+            exDataGen.updateTick(tick)
+        exDataGen = self.potgDict.get(vtSymbol, None)
+        if exDataGen:
+            exDataGen.updateTick(tick)                        
+            
     
     #----------------------------------------------------------------------
     def processTimerEvent(self, event):
@@ -223,10 +263,16 @@ class DrEngine(object):
             # 强制所有的K线生成器立即完成K线
             for bg in self.bgDict.values():
                 bg.generate()
-        
+
+            for dataGenerator in self.linegDict.values():
+                dataGenerator.clearTmepData()
+            for dataGenerator in self.jumpgDict.values():
+                dataGenerator.clearTmepData()
+            for dataGenerator in self.potgDict.values():
+                dataGenerator.clearTmepData()
+
         # 记录新的时间
         self.lastTimerTime = currentTime
-    
     
 
     #----------------------------------------------------------------------
@@ -300,6 +346,21 @@ class DrEngine(object):
                                                         low=bar.low, 
                                                         close=bar.close))        
 
+
+    #----------------------------------------------------------------------
+    def onExdata(self, exData ):
+        """扩展数据更新"""
+        vtSymbol = exData.vtSymbol
+
+        #debug 1
+        print exData.__dict__
+
+        #debug 2
+        #return 
+        self.insertData(EXDATA_DB_NAME, vtSymbol, exData)
+
+        pass
+
     #----------------------------------------------------------------------
     def registerEvent(self):
         """注册事件监听"""
@@ -318,6 +379,9 @@ class DrEngine(object):
         while self.active:
             try:
                 dbName, collectionName, d = self.queue.get(block=True, timeout=1)
+                #debug
+                if( dbName == EXDATA_DB_NAME ):
+                    print 'queue.get:', d
                 
                 # 这里采用MongoDB的update模式更新数据，在记录tick数据时会由于查询
                 # 过于频繁，导致CPU占用和硬盘读写过高后系统卡死，因此不建议使用
@@ -330,6 +394,7 @@ class DrEngine(object):
                 except DuplicateKeyError:
                     self.writeDrLog(u'键值重复插入失败，报错信息：%s' %traceback.format_exc())
             except Empty:
+
                 pass
             
     #----------------------------------------------------------------------

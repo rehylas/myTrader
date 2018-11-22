@@ -24,6 +24,7 @@ class VtPotData(object):
     def __init__(self):
         """Constructor"""
         super(VtPotData, self).__init__(  )
+        self.vtSymbol = EMPTY_STRING
         self.datetime = EMPTY_STRING
         self.time = EMPTY_STRING
         self.endtime = EMPTY_STRING
@@ -32,6 +33,7 @@ class VtPotData(object):
         self.volume = EMPTY_FLOAT
         self.dim = EMPTY_FLOAT
         self.tickcount = EMPTY_INT
+        self.datatype = 'pot'
 
 
 
@@ -39,11 +41,12 @@ class VtPotData(object):
 class PotGenerator(DataGenerator):
     """
     数据生成器基类
+    需要 setting["potsize"]
     """
 
     #----------------------------------------------------------------------
     def __init__(self, onDataGen, setting  ):
-        """Constructor"""
+        """Constructor"""   
         super(PotGenerator, self).__init__( onDataGen )
 
         self.oneData = VtPotData()             #  数据对象
@@ -54,6 +57,12 @@ class PotGenerator(DataGenerator):
  
         self.lastTick = None        # 上一TICK缓存对象
 
+    #----------------------------------------------------------------------
+    def clearTmepData(self):
+        self.oneData = VtPotData() 
+        self.dataSet =[] 
+        self.lastTick = None
+        pass
 
     #----------------------------------------------------------------------
     def updateTick(self, tick):
@@ -69,6 +78,7 @@ class PotGenerator(DataGenerator):
 
         
         if( self.oneData.tickcount ==  EMPTY_INT ): 
+            self.oneData.vtSymbol = tick.vtSymbol 
             self.oneData.datetime = tick.datetime
             self.oneData.time = tick.time
             self.oneData.endtime = tick.datetime
@@ -92,7 +102,7 @@ class PotGenerator(DataGenerator):
             lastType = self.oneData.type
             lastclose = self.oneData.close
             self.oneData = VtPotData()
-
+            self.oneData.vtSymbol = tick.vtSymbol 
             self.oneData.datetime = tick.datetime
             self.oneData.time = tick.time
             self.oneData.endtime = tick.datetime

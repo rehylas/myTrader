@@ -24,17 +24,20 @@ class VtJumpData(object):
     def __init__(self):
         """Constructor"""
         super(VtJumpData, self).__init__(  )
+        self.vtSymbol = EMPTY_STRING
         self.datetime = EMPTY_STRING
         self.time = EMPTY_STRING
         self.endtime = EMPTY_STRING
         self.open = EMPTY_FLOAT
         self.close = EMPTY_FLOAT
         self.type = EMPTY_INT
+        self.datatype = 'jump'
 
 ########################################################################
 class JumpGenerator(DataGenerator):
     """
     数据生成器基类
+    setting["jumpsize"]
     """
 
     #----------------------------------------------------------------------
@@ -48,6 +51,14 @@ class JumpGenerator(DataGenerator):
         self.JumpSize = float(setting["jumpsize"])
  
         self.lastTick = None        # 上一TICK缓存对象
+
+
+    #----------------------------------------------------------------------
+    def clearTmepData(self):
+        self.oneData = VtJumpData() 
+        self.dataSet =[] 
+        self.lastTick = None
+        pass
 
     #----------------------------------------------------------------------
     def updateTick(self, tick):
@@ -85,9 +96,11 @@ class JumpGenerator(DataGenerator):
             pass 
 
         if( self.oneData.type != EMPTY_INT ):
+                self.oneData.vtSymbol = tick.vtSymbol  
                 self.dataSet.append( self.oneData )
                 self.generate( )     
-                self.oneData = VtJumpData()       
+                self.oneData = VtJumpData()  
+                self.oneData.vtSymbol = tick.vtSymbol      
 
     #----------------------------------------------------------------------
     # def updateBar(self, bar):
@@ -95,6 +108,7 @@ class JumpGenerator(DataGenerator):
  
     #----------------------------------------------------------------------
     def generate(self):
+        
         """"""
         self.onDataGen(self.oneData)
 

@@ -103,12 +103,12 @@ class N5Algo(AlgoTemplate):
             self.writeLog( strLog )          
             if (self.direction == DIRECTION_LONG ):
                 func = self.buy
-                self.inPrice    = tick.lastPrice  -1*contract.priceTick
+                self.inPrice    = tick.lastPrice  -1.0*contract.priceTick
             else:
                 func = self.sell  
-                self.inPrice    = tick.lastPrice  +1*contract.priceTick
+                self.inPrice    = tick.lastPrice  +1.0*contract.priceTick
                
-            self.vtOrderID = func(self.vtSymbol, self.inPrice , self.totalVolume, offset= OFFSET_OPEN ) 
+            self.vtOrderID = func(self.vtSymbol, float(self.inPrice) , self.totalVolume, offset= OFFSET_OPEN ) 
             strLog = u'sendorder：%s %.1f'%(self.direction, self.inPrice)
             self.writeLog( strLog  )               
             str = 'send order ret :', self.vtOrderID
@@ -142,9 +142,9 @@ class N5Algo(AlgoTemplate):
                     func = self.buy                 
                 self.outPrice    = tick.lastPrice    
                 if( contract.exchange == 'SHFE' ):   #self.totalVolume
-                    func(self.vtSymbol, self.outPrice, self.totalVolume , offset= OFFSET_CLOSETODAY )   
+                    func(self.vtSymbol, float(self.outPrice), self.totalVolume , offset= OFFSET_CLOSETODAY )   
                 else:
-                    func(self.vtSymbol, self.outPrice, self.totalVolume, offset= OFFSET_CLOSE )       
+                    func(self.vtSymbol, float(self.outPrice), self.totalVolume, offset= OFFSET_CLOSE )       
                 self.state = OS_3
                 strLog = u'sendorder：%d %s %.1f'%(nCheckOut, OFFSET_CLOSE, self.outPrice)
                 self.writeLog( strLog  ) 
@@ -285,8 +285,9 @@ class N5Widget(AlgoWidget):
         self.spinVolume = QtWidgets.QDoubleSpinBox()
         self.spinVolume.setMinimum(0)
         self.spinVolume.setMaximum(1000000000)
-        self.spinVolume.setDecimals(1)
-        
+        self.spinVolume.setDecimals(0)
+        self.spinVolume.setValue(1)
+
         self.comboOffset = QtWidgets.QComboBox()
         self.comboOffset.addItems(['', OFFSET_OPEN, OFFSET_CLOSE])
         self.comboOffset.setCurrentIndex(0)

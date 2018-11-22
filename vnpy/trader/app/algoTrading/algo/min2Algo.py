@@ -284,7 +284,8 @@ class TkWidget(AlgoWidget):
         self.spinVolume = QtWidgets.QDoubleSpinBox()
         self.spinVolume.setMinimum(0)
         self.spinVolume.setMaximum(1000000000)
-        self.spinVolume.setDecimals(1)
+        self.spinVolume.setDecimals(0)
+        self.spinVolume.setValue(1)
         
         self.comboOffset = QtWidgets.QComboBox()
         self.comboOffset.addItems(['', OFFSET_OPEN, OFFSET_CLOSE])

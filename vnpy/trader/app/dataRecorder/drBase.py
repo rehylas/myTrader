@@ -11,6 +11,7 @@ SETTING_DB_NAME = 'MyTrader_Setting_Db'
 TICK_DB_NAME = 'MyTrader_Tick_Db'
 DAILY_DB_NAME = 'MyTrader_Daily_Db'
 MINUTE_DB_NAME = 'MyTrader_1Min_Db'
+EXDATA_DB_NAME = 'MyTrader_Exdata_Db'
 BASE_DB_NAME = 'MyTrader_Base_Db'
 
 # 行情记录模块事件
