@@ -25,6 +25,7 @@ class VtJumpData(object):
         """Constructor"""
         super(VtJumpData, self).__init__(  )
         self.vtSymbol = EMPTY_STRING
+        self.date = EMPTY_STRING                # 日期 20151009
         self.datetime = EMPTY_STRING
         self.time = EMPTY_STRING
         self.endtime = EMPTY_STRING
@@ -78,6 +79,7 @@ class JumpGenerator(DataGenerator):
        
         if( dim >=  self.JumpSize):
             self.oneData.datetime = tick.datetime
+            self.oneData.date = tick.date
             self.oneData.time = tick.time
             self.oneData.close = tick.lastPrice
             self.oneData.open = tick.lastPrice - dim
@@ -97,6 +99,7 @@ class JumpGenerator(DataGenerator):
 
         if( self.oneData.type != EMPTY_INT ):
                 self.oneData.vtSymbol = tick.vtSymbol  
+                self.oneData.date  = tick.date
                 self.dataSet.append( self.oneData )
                 self.generate( )     
                 self.oneData = VtJumpData()  

@@ -26,6 +26,7 @@ class VtPotData(object):
         super(VtPotData, self).__init__(  )
         self.vtSymbol = EMPTY_STRING
         self.datetime = EMPTY_STRING
+        self.date = EMPTY_STRING                # 日期 20151009
         self.time = EMPTY_STRING
         self.endtime = EMPTY_STRING
         self.open = EMPTY_FLOAT
@@ -89,6 +90,7 @@ class PotGenerator(DataGenerator):
             self.oneData.dim = 0
             self.oneData.tickcount = 1  
             self.lastTick = tick
+            self.oneData.date  = tick.date
             self.dataSet.append( self.oneData )
             self.generate( )
             return           
@@ -105,7 +107,7 @@ class PotGenerator(DataGenerator):
             self.oneData.vtSymbol = tick.vtSymbol 
             self.oneData.datetime = tick.datetime
             self.oneData.time = tick.time
-            self.oneData.endtime = tick.datetime
+            self.oneData.endtime = tick.time
             self.oneData.open = lastclose
             self.oneData.close = tick.lastPrice 
             self.oneData.volume = tick.lastVolume
@@ -113,6 +115,7 @@ class PotGenerator(DataGenerator):
             self.oneData.dim = 0
             self.oneData.tickcount = 1  
             self.lastTick = tick
+            self.oneData.date  = tick.date
             self.dataSet.append( self.oneData )
             self.generate( )
             

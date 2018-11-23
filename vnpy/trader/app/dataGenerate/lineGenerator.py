@@ -30,6 +30,7 @@ class VtLineData(object):
         super(VtLineData, self).__init__(  )
         self.vtSymbol = EMPTY_STRING
         self.datetime = EMPTY_STRING
+        self.date = EMPTY_STRING                # 日期 20151009
         self.time = EMPTY_STRING
         self.open = EMPTY_FLOAT
         self.close = EMPTY_FLOAT
@@ -112,6 +113,7 @@ class LineGenerator(DataGenerator):
         if( self.oneData.dim >=  self.LineSize):
             self.oneData.vtSymbol = tick.vtSymbol 
             self.oneData.datetime = tick.datetime
+            self.oneData.date  = tick.date
             self.oneData.time = tick.time
             self.oneData.close = tick.lastPrice
  
