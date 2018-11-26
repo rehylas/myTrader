@@ -116,6 +116,7 @@ class PotGenerator(DataGenerator):
             # self.dataSet.append( newPot )
             lastType = self.oneData.type
             lastclose = self.oneData.close
+            self.oneData.endtime = tick.time
             self.oneData = VtPotData()
             self.oneData.vtSymbol = tick.vtSymbol 
             self.oneData.datetime = tick.datetime
@@ -125,7 +126,7 @@ class PotGenerator(DataGenerator):
             self.oneData.close = tick.lastPrice 
             self.oneData.volume = tick.lastVolume
             self.oneData.type = lastType*(-1)
-            self.oneData.dim = self.oneData.close - self.oneData.open
+            self.oneData.dim = (self.oneData.close - self.oneData.open)*self.oneData.type
             self.oneData.tickcount = 1  
             self.datatype = 'pot'
             self.lastTick = tick
@@ -145,9 +146,11 @@ class PotGenerator(DataGenerator):
             if( tick.lastPrice > self.oneData.close and self.oneData.type == POT_TYPE_UP ):
                 self.oneData.close = tick.lastPrice
                 self.oneData.dim = dim_temp       
+                self.oneData.time = tick.time
             if( tick.lastPrice < self.oneData.close and self.oneData.type == POT_TYPE_DOWN ):
                 self.oneData.close = tick.lastPrice
                 self.oneData.dim = dim_temp    
+                self.oneData.time = tick.time
 
             self.oneData.volume = self.oneData.volume + tick.lastVolume
             self.oneData.tickcount = self.oneData.tickcount + 1  
@@ -177,8 +180,6 @@ class PotGenerator(DataGenerator):
                 # print 'type,close, ,dim  ', overPot.type, overPot.open, overPot.close , overPot.dim 
                 # print '----------------------------------------------'
             pass
-
-        
 
 
 
