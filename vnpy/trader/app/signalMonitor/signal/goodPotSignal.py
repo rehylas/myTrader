@@ -8,7 +8,9 @@ from vnpy.trader.vtConstant import (DIRECTION_LONG, DIRECTION_SHORT,
                                     OFFSET_OPEN, OFFSET_CLOSE,
                                     STATUS_ALLTRADED, STATUS_CANCELLED, STATUS_REJECTED)
 from vnpy.trader.uiQt import QtWidgets
-from vnpy.trader.app.signalMonitor.generateDataTemp import PotGenerator, POT_TYPE_UP, POT_TYPE_DOWN
+#from vnpy.trader.app.signalMonitor.generateDataTemp import PotGenerator, POT_TYPE_UP, POT_TYPE_DOWN
+
+from vnpy.trader.app.dataGenerate.potGenerator import PotGenerator, POT_TYPE_UP, POT_TYPE_DOWN
 from vnpy.trader.app.signalMonitor.signalTemplate import SignalTemplate
 from vnpy.trader.app.signalMonitor.uiSignalWidget import SignalWidgetTemp, QtWidgets
 from vnpy.trader.vtConstant import EMPTY_UNICODE, EMPTY_STRING, EMPTY_FLOAT, EMPTY_INT

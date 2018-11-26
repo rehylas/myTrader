@@ -265,10 +265,13 @@ class DrEngine(object):
                 bg.generate()
 
             for dataGenerator in self.linegDict.values():
+                dataGenerator.generate( lastData = True )
                 dataGenerator.clearTmepData()
             for dataGenerator in self.jumpgDict.values():
-                dataGenerator.clearTmepData()
+                dataGenerator.generate(  )  #lastData = True
+                dataGenerator.clearTmepData()  
             for dataGenerator in self.potgDict.values():
+                dataGenerator.generate(  )   #lastData = True
                 dataGenerator.clearTmepData()
 
         # 记录新的时间

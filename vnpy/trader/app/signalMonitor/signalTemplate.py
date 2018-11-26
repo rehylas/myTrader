@@ -200,17 +200,18 @@ class SignalTemplate(object):
         
     #----------------------------------------------------------------------    
     def sendSignalMsg(self, signalMsg):
-        if( self.engine.mainEngine ):
+      
+        if hasattr(self.engine, 'mainEngine'):
             sub = u'交易信号:%s '%( self.templateName  )
             self.engine.mainEngine.sendMsg( sub , signalMsg ) 
+        else:
+            print 'not has mainEngine'            
 
     #----------------------------------------------------------------------
     def save2db( self ):
         """保存到数据库"""
-        #save self.signal   to db
-        if( self.engine.mainEngine ):
+        #save self.signal   to db    
+        if hasattr(self.engine, 'mainEngine'):
             self.engine.save2db( self.signal )
-            pass
-            # sub = u'交易信号:%s '%( self.templateName  )
-            # self.engine.mainEngine.sendMsg( sub , signalMsg )         
-        pass        
+        else:
+            print 'not has mainEngine'   

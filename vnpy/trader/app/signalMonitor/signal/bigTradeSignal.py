@@ -12,6 +12,7 @@ from vnpy.trader.uiQt import QtWidgets
 
 from vnpy.trader.app.dataGenerate.jumpGenerator import JumpGenerator
 from vnpy.trader.app.dataGenerate.lineGenerator import LineGenerator
+from vnpy.trader.app.dataGenerate.potGenerator import PotGenerator
 
 
 from vnpy.trader.app.signalMonitor.signalTemplate import SignalTemplate
@@ -59,8 +60,10 @@ class BigTradeSignal(SignalTemplate):
 
         self.lastTick = None
 
+        potSetting ={ 'potsize':10 }
         jumpSetting ={ 'jumpsize':10 }
         lineSetting ={ 'linesize':10 }
+        self.pots =   PotGenerator(self.onJumpData, jumpSetting)
         self.jumps =  JumpGenerator(self.onJumpData, jumpSetting)
         self.lines =  LineGenerator(self.onLineData, lineSetting)
         

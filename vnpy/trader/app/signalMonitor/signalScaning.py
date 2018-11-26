@@ -270,6 +270,15 @@ class SignalScaningEngine(object):
         self.updateDailyClose(bar.datetime, bar.close)
     
     #----------------------------------------------------------------------
+    def newExdata(self, exdata):
+        """新的扩展数据线"""
+        pass
+        # self.bar = bar
+        # self.dt = bar.datetime
+        # self.strategy.onBar(bar)    # 推送K线到策略中
+        # self.updateDailyClose(bar.datetime, bar.close)
+
+    #----------------------------------------------------------------------
     def newTick(self, tick):
         """新的Tick"""
         self.tick = tick
