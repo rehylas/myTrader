@@ -18,7 +18,7 @@ except AttributeError:
 import platform
 system = platform.system()
 
-# vn.trader模块
+# vn.trader模块 t
 sys.path.append('..')
 sys.path.append('../..')
 from vnpy.event import EventEngine
