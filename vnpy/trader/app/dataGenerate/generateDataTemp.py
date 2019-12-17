@@ -41,7 +41,7 @@ class DataGenerator(object):
     #     pass
  
     #----------------------------------------------------------------------
-    def generate(self):
+    def generate(self, lastData = False):
         """手动强制立即完成K线合成"""
         self.onDataCen(self.oneData)
         self.bar = None

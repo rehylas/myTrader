@@ -969,7 +969,8 @@ class TradingWidget(QtWidgets.QFrame):
         req.symbol = symbol
         req.exchange = exchange
  
-        
+        print 'subscribe --------------->'
+        print req.__dict__
         self.mainEngine.subscribe(req, 'CTP')    
 
         pass

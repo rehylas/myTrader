@@ -12,6 +12,7 @@ from vnpy.trader.uiQt import QtWidgets
 
 from vnpy.trader.app.dataGenerate.potGenerator import PotGenerator, POT_TYPE_UP, POT_TYPE_DOWN
 from vnpy.trader.app.signalMonitor.signalTemplate import SignalTemplate
+
 from vnpy.trader.app.signalMonitor.uiSignalWidget import SignalWidgetTemp, QtWidgets
 from vnpy.trader.vtConstant import EMPTY_UNICODE, EMPTY_STRING, EMPTY_FLOAT, EMPTY_INT
 
@@ -69,7 +70,7 @@ class GoodPotSignal(SignalTemplate):
         n = len(dl)
         if( n  >=2 ):
             Pot = dl[n-2]
-            msg = u'%s 新点:  %f, %f, %f, %d' %(Pot.time,  Pot.open, Pot.close, Pot.dim,  Pot.type )
+            msg = u'%s 新点:  %f, %f, %f, %f, %d' %(Pot.time,  Pot.open, Pot.close, (Pot.close-Pot.open), Pot.dim,  Pot.type )
             self.writeLog(msg)
             print msg   
             msgObject = { 'msg': msg }

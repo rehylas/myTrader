@@ -66,8 +66,6 @@ productClassMap[PRODUCT_FUTURES] = defineDict["THOST_FTDC_PC_Futures"]
 productClassMap[PRODUCT_OPTION] = defineDict["THOST_FTDC_PC_Options"]
 productClassMap[PRODUCT_COMBINATION] = defineDict["THOST_FTDC_PC_Combination"]
 productClassMapReverse = {v:k for k,v in productClassMap.items()}
-productClassMapReverse[defineDict["THOST_FTDC_PC_ETFOption"]] = PRODUCT_OPTION
-productClassMapReverse[defineDict["THOST_FTDC_PC_Stock"]] = PRODUCT_EQUITY
 
 # 委托状态映射
 statusMap = {}
@@ -103,12 +101,31 @@ class CtpGateway(VtGateway):
         
         self.fileName = self.gatewayName + '_connect.json'
         self.filePath = getJsonPath(self.fileName, __file__)        
+
+
+    #----------------------------------------------------------------------
+    def getSetting(self ):
+        """连接"""
+        try:
+            f = open(self.filePath)
+        except IOError:
+            print("IOError:", self.filePath )
+            log = VtLogData()
+            log.gatewayName = self.gatewayName
+            log.logContent = text.LOADING_ERROR
+            self.onLog(log)
+            return {}
         
+        # 解析json文件
+        setting = json.load(f)
+        f.close()
+        return setting 
+
     #----------------------------------------------------------------------
     def connect(self):
         """连接"""
         try:
-            f = file(self.filePath)
+            f = open(self.filePath)
         except IOError:
             log = VtLogData()
             log.gatewayName = self.gatewayName
@@ -118,6 +135,7 @@ class CtpGateway(VtGateway):
         
         # 解析json文件
         setting = json.load(f)
+        f.close()
         try:
             userID = str(setting['userID'])
             password = str(setting['password'])
@@ -128,11 +146,11 @@ class CtpGateway(VtGateway):
             # 如果json文件提供了验证码
             if 'authCode' in setting: 
                 authCode = str(setting['authCode'])
-                userProductInfo = str(setting['userProductInfo'])
+                appID = str(setting['appID'])
                 self.tdApi.requireAuthentication = True
             else:
                 authCode = None
-                userProductInfo = None
+                appID = None
 
         except KeyError:
             log = VtLogData()
@@ -143,7 +161,7 @@ class CtpGateway(VtGateway):
         
         # 创建行情和交易接口对象
         self.mdApi.connect(userID, password, brokerID, mdAddress)
-        self.tdApi.connect(userID, password, brokerID, tdAddress, authCode, userProductInfo)
+        self.tdApi.connect(userID, password, brokerID, tdAddress, authCode, appID)
         
         # 初始化并启动查询
         self.initQuery()
@@ -155,8 +173,6 @@ class CtpGateway(VtGateway):
         
     #----------------------------------------------------------------------
     def sendOrder(self, orderReq):
-        # print 'ctp sendOrder:'
-        # print orderReq
         """发单"""
         return self.tdApi.sendOrder(orderReq)
         
@@ -354,7 +370,7 @@ class CtpMdApi(MdApi):
         tick.exchange = symbolExchangeDict[tick.symbol]
         tick.vtSymbol = tick.symbol #'.'.join([tick.symbol, tick.exchange])
         
-        tick.lastPrice = round(data['LastPrice'], 4)  #update 2018.11.13 hylas
+        tick.lastPrice = data['LastPrice']
         tick.volume = data['Volume']
         tick.openInterest = data['OpenInterest']
         tick.time = '.'.join([data['UpdateTime'], str(data['UpdateMillisec']/100)])
@@ -375,15 +391,35 @@ class CtpMdApi(MdApi):
         tick.bidVolume1 = data['BidVolume1']
         tick.askPrice1 = data['AskPrice1']
         tick.askVolume1 = data['AskVolume1']
-
-        tick.avgPrice = round(data['AveragePrice'],2) 
-        tick.totalMoney = data['Turnover']
-
- 
-        # 大商所日期转换
-        if tick.exchange is EXCHANGE_DCE:
-            tick.date = datetime.now().strftime('%Y%m%d')
         
+        # 大商所日期转换
+        if tick.exchange == EXCHANGE_DCE:
+            tick.date = datetime.now().strftime('%Y%m%d')
+
+        # 上交所，SSE，股票期权相关
+        if tick.exchange == EXCHANGE_SSE:
+            tick.bidPrice2 = data['BidPrice2']
+            tick.bidVolume2 = data['BidVolume2']
+            tick.askPrice2 = data['AskPrice2']
+            tick.askVolume2 = data['AskVolume2']
+
+            tick.bidPrice3 = data['BidPrice3']
+            tick.bidVolume3 = data['BidVolume3']
+            tick.askPrice3 = data['AskPrice3']
+            tick.askVolume3 = data['AskVolume3']
+
+            tick.bidPrice4 = data['BidPrice4']
+            tick.bidVolume4 = data['BidVolume4']
+            tick.askPrice4 = data['AskPrice4']
+            tick.askVolume4 = data['AskVolume4']
+
+            tick.bidPrice5 = data['BidPrice5']
+            tick.bidVolume5 = data['BidVolume5']
+            tick.askPrice5 = data['AskPrice5']
+            tick.askVolume5 = data['AskVolume5']
+
+            tick.date = data['TradingDay']
+
         self.gateway.onTick(tick)
         
     #---------------------------------------------------------------------- 
@@ -711,7 +747,8 @@ class CtpTdApi(TdApi):
     #----------------------------------------------------------------------
     def onRspQryInvestorPosition(self, data, error, n, last):
         """持仓查询回报"""
-        if not data['InstrumentID']:
+        symbol = data.get('InstrumentID', '')
+        if not symbol:
             return
         
         # 获取持仓缓存对象
@@ -739,6 +776,8 @@ class CtpTdApi(TdApi):
             pos.ydPosition = data['Position'] - data['TodayPosition']
             
         # 计算成本
+        if pos.symbol not in self.symbolSizeDict:
+            return
         size = self.symbolSizeDict[pos.symbol]
         cost = pos.price * pos.position * size
         
@@ -752,9 +791,9 @@ class CtpTdApi(TdApi):
         
         # 读取冻结
         if pos.direction is DIRECTION_LONG: 
-            pos.frozen += data['LongFrozen']
-        else:
             pos.frozen += data['ShortFrozen']
+        else:
+            pos.frozen += data['LongFrozen']
         
         # 查询回报结束
         if last:
@@ -789,6 +828,7 @@ class CtpTdApi(TdApi):
                            data['CloseProfit'] + data['PositionProfit'] + data['CashIn'] -
                            data['Commission'])
     
+        print "account:",account.__dict__ 
         # 推送
         self.gateway.onAccount(account)
         
@@ -1352,14 +1392,14 @@ class CtpTdApi(TdApi):
         pass
         
     #----------------------------------------------------------------------
-    def connect(self, userID, password, brokerID, address, authCode, userProductInfo):
+    def connect(self, userID, password, brokerID, address, authCode, appID):
         """初始化连接"""
         self.userID = userID                # 账号
         self.password = password            # 密码
         self.brokerID = brokerID            # 经纪商代码
         self.address = address              # 服务器地址
-        self.authCode = authCode            #验证码
-        self.userProductInfo = userProductInfo  #产品信息
+        self.appID = appID                  # 产品信息
+        self.authCode = authCode            # 验证码
         
         # 如果尚未建立服务器连接，则进行连接
         if not self.connectionStatus:
@@ -1403,12 +1443,12 @@ class CtpTdApi(TdApi):
     #----------------------------------------------------------------------
     def authenticate(self):
         """申请验证"""
-        if self.userID and self.brokerID and self.authCode and self.userProductInfo:
+        if self.userID and self.brokerID and self.authCode and self.appID:
             req = {}
             req['UserID'] = self.userID
             req['BrokerID'] = self.brokerID
             req['AuthCode'] = self.authCode
-            req['UserProductInfo'] = self.userProductInfo
+            req['AppID'] = self.appID
             self.reqID +=1
             self.reqAuthenticate(req, self.reqID)
 
@@ -1437,7 +1477,7 @@ class CtpTdApi(TdApi):
         
         req['InstrumentID'] = orderReq.symbol
         req['LimitPrice'] = orderReq.price
-        req['VolumeTotalOriginal'] = orderReq.volume
+        req['VolumeTotalOriginal'] = int(orderReq.volume)
         
         # 下面如果由于传入的类型本接口不支持，则会返回空字符串
         req['OrderPriceType'] = priceTypeMap.get(orderReq.priceType, '')
@@ -1465,11 +1505,9 @@ class CtpTdApi(TdApi):
         if orderReq.priceType == PRICETYPE_FOK:
             req['OrderPriceType'] = defineDict["THOST_FTDC_OPT_LimitPrice"]
             req['TimeCondition'] = defineDict['THOST_FTDC_TC_IOC']
-            req['VolumeCondition'] = defineDict['THOST_FTDC_VC_CV']        
+            req['VolumeCondition'] = defineDict['THOST_FTDC_VC_CV']
         
         self.reqOrderInsert(req, self.reqID)
-        print 'ctp reqOrderInsert:'
-        print req
         
         # 返回订单号（字符串），便于某些算法进行动态管理
         vtOrderID = '.'.join([self.gatewayName, str(self.orderRef)])
@@ -1508,7 +1546,4 @@ class CtpTdApi(TdApi):
         self.gateway.onLog(log)        
 
 
-
-
-
-    
+       

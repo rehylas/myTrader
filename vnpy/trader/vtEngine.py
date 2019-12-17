@@ -5,21 +5,33 @@ from __future__ import division
 import os
 import shelve
 import logging
+import traceback
+import json
+import random
+
 from collections import OrderedDict
 from datetime import datetime
 from copy import copy
+from string import digits
 
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import ConnectionFailure
+from pymongo.errors import DuplicateKeyError
+
+from redis import StrictRedis
 
 from vnpy.event import Event
-from vnpy.msg import  sendmail , sendwx 
+from vnpy.msg import  sendmail , sendwx , stockMsgSend
 from vnpy.trader.vtGlobal import globalSetting
 from vnpy.trader.vtEvent import *
 from vnpy.trader.vtGateway import *
 from vnpy.trader.language import text
 from vnpy.trader.vtFunction import getTempPath
 
+#key 常量
+MARKET_TODAY_TICK = 'market:today:tick:'
+TODAY_EXPIRE_TIME = 86400  #60*60*24   12小时
+MSG_TICK_CHANNEL   = 'tick_channel'  
 
 ########################################################################
 class MainEngine(object):
@@ -36,10 +48,11 @@ class MainEngine(object):
         self.eventEngine.start()
         
         # 创建数据引擎
-        self.dataEngine = DataEngine(self.eventEngine)
+        self.dataEngine = DataEngine(self.eventEngine, mainEngine = self )
         
         # MongoDB数据库相关
         self.dbClient = None    # MongoDB客户端对象
+        self.dbClient_redis = None # Redis 客户端对象
         
         # 接口实例
         self.gatewayDict = OrderedDict()
@@ -57,7 +70,6 @@ class MainEngine(object):
         self.initLogEngine()
 
         # 消息发送实例
-        
         self.msgSender = None
         self.initMsgSender()
 
@@ -120,7 +132,8 @@ class MainEngine(object):
             gateway.connect()
             
             # 接口连接后自动执行数据库连接的任务
-            self.dbConnect()        
+            self.dbConnect()     
+            self.dbConnect_redis()   
    
     #----------------------------------------------------------------------
     def subscribe(self, subscribeReq, gatewayName):
@@ -206,6 +219,72 @@ class MainEngine(object):
         self.eventEngine.put(event)        
     
     #----------------------------------------------------------------------
+    def dbConnect_redis(self):
+        """连接Redis数据库"""
+        if not self.dbClient_redis:  
+            try:      
+                self.dbClient_redis = StrictRedis(host= globalSetting['redisHost'], port= globalSetting['redisPort'] , db=1 )
+                self.writeLog(text.DATABASE_CONNECTING_COMPLETED_REDIS)
+            except ConnectionFailure:
+                self.writeLog(text.DATABASE_CONNECTING_FAILED_REDIS)        
+        pass    
+
+    #----------------------------------------------------------------------
+    #获取Tick数据
+    def db_getTick(self, symbol ):
+        if self.dbClient_redis:
+            try:
+                key = MARKET_TODAY_TICK + symbol
+                val = self.dbClient_redis.get( key )
+                if(val != None ):
+                    val = eval( val ) #ast.literal_eval( val ) 
+                # print val
+                # print type(val)
+                return val   
+            except Exception, e:  
+                txt = 'dbInsert error:%s'%(e.message)
+                self.writeLog( txt )
+                return None                    
+                pass
+        else: 
+            self.writeLog(text.DATA_GET_FAILED_REDIS)
+            pass
+    #----------------------------------------------------------------------
+    #保存tick数据
+    def db__setTick( self,symbol, val ): 
+        if self.dbClient_redis:
+            try:        
+                key = MARKET_TODAY_TICK + symbol
+                valStr = str(val)
+                self.dbClient_redis.set( key, valStr ,  ex = TODAY_EXPIRE_TIME  )
+                #self.dbClient_redis.expire(key,  TODAY_EXPIRE_TIME ) 
+            except Exception, e:  
+                txt = 'dbInsert error:%s'%(e.message)
+                self.writeLog( txt )
+                             
+        else:
+            self.writeLog(text.DATA_SET_FAILED_REDIS)
+            pass                          
+
+
+    # Tick  数据消息 队列
+    def db_Publish_Tick( self, msg_val ): 
+     
+        if self.dbClient_redis:
+            try:        
+                valStr = str(msg_val)
+                self.dbClient_redis.publish( MSG_TICK_CHANNEL, valStr )
+            except Exception, e:  
+                txt = 'dbInsert error:%s'%(e.message)
+                self.writeLog( txt )
+                             
+        else:
+            self.writeLog(text.DATA_ERROR_REDIS)
+            pass            
+
+        pass
+  
+    #----------------------------------------------------------------------
     def dbConnect(self):
         """连接MongoDB数据库"""
         if not self.dbClient:
@@ -237,11 +316,12 @@ class MainEngine(object):
             try:
                 collection.insert_one(d)
             except Exception, e:
-                txt = 'dbInsert error:%s'%(e.message)
-                print '---------------------------------'
-                print  txt
-                print '---------------------------------'                
-                self.writeLog( txt )
+                # dbug 
+                # txt = 'dbInsert error:%s'%(e.message)
+                # print '---------------------------------'
+                # print  txt
+                # print '---------------------------------'                
+                # self.writeLog( txt )
 
                 pass
         else:
@@ -385,6 +465,7 @@ class MainEngine(object):
             "error": LogEngine.LEVEL_ERROR,
             "critical": LogEngine.LEVEL_CRITICAL,
         }
+
         level = levelDict.get(globalSetting["logLevel"], LogEngine.LEVEL_CRITICAL)
         self.logEngine.setLogLevel(level)
         
@@ -407,18 +488,26 @@ class MainEngine(object):
     #----------------------------------------------------------------------
     def initMsgSender(self):
         """初始化消息发送人"""
-        print 'msgSender  ', globalSetting['msgwx']
+        #print 'msgSender  ', globalSetting['msgwx']
         if( globalSetting['msgwx'] == True ):
-            print 'call  sendwx'
-            self.msgSender = sendwx()
+            #print 'call  sendwx'
+            # edit sendwx()   == > stockMsgSend
+            #self.msgSender = sendwx()
+            self.msgSender = stockMsgSend
         pass
 
     def sendMsg(self, sub, msg):
-        sendmail( sub, msg )
-        if self.msgSender == None :
-            return 
-        #
-        self.msgSender.send( msg )         
+        try:
+            sendmail( sub, msg )
+            if self.msgSender == None :
+                return 
+            # data =  {'userid':'80010121','userpwd':'888888','txt':'002230 科大讯飞要涨了' }
+            data =  {'userid':'80010121','userpwd':'888889', 'txt':msg }
+            self.msgSender( data )          
+        except Exception,e:
+            txt = 'sendMsg err::%s'%(e.message)
+            self.writeLog( txt) 
+
 
     #----------------------------------------------------------------------
     def registerLogEvent(self, eventType):
@@ -451,9 +540,11 @@ class DataEngine(object):
     FINISHED_STATUS = [STATUS_ALLTRADED, STATUS_REJECTED, STATUS_CANCELLED]
 
     #----------------------------------------------------------------------
-    def __init__(self, eventEngine):
+    def __init__(self, eventEngine, mainEngine = None ):
         """Constructor"""
         self.eventEngine = eventEngine
+        self.mainEngine = mainEngine
+        
         
         # 保存数据的字典和列表
         self.tickDict = {}
@@ -492,6 +583,7 @@ class DataEngine(object):
     def processTickEvent(self, event):
         """处理成交事件"""
         tick = event.dict_['data']
+        # print 'DataEngine processTickEvent ----->'
 
         # if( self.tickDict.has_key('name') ==False):
         #     self.tickDict[tick.vtSymbol] = tick
@@ -509,10 +601,27 @@ class DataEngine(object):
         self.contractDict[contract.symbol] = contract       # 使用常规代码（不包括交易所）可能导致重复
 
         #debug  
-        # print 'onContract:'
+        
+        
+        
+        # print 'onContract:'   此处代码移到  app . marketServer 里处理
         # if( contract.__dict__[u'productClass']  == u'期货' ):
-        #     print contract.__dict__
-        #     print contract.__dict__[u'name']        
+        #     #print '---------------------------------------------------------'
+        #     contractTemp = contract.__dict__.copy()
+
+        #     contractType =   contractTemp['symbol'].translate(None, digits)  
+        #     contractTemp['type'] = contractType
+        #     contractTemp.pop('lastTik')
+        #     contractTemp.pop('rawData')
+        #     contractTemp.pop('optionType')
+        #     contractTemp.pop('strikePrice')
+        #     contractTemp.pop('underlyingSymbol')
+ 
+        #     #print contractTemp
+        #     self.mainEngine.dbInsert( 'futureauto', 'futures', contractTemp ) 
+
+            
+            
     
     #----------------------------------------------------------------------
     def processOrderEvent(self, event):
@@ -559,7 +668,49 @@ class DataEngine(object):
         """处理账户事件"""
         account = event.dict_['data']
         self.accountDict[account.vtAccountID] = account
+
+        timeStr = getTime()
+        hour =  timeStr[0:2]
+        if( hour == '15'  ):
+            print 'save account to db ', hour
+            try:
+                dbName ='futureauto' 
+                collectionName = 'accountdetail'
+                account = event.dict_['data']
+                #print account.__dict__
+                account = self.prodict( account.__dict__ )
+                self.mainEngine.dbInsert(dbName, collectionName, account)
+
+            except DuplicateKeyError:
+                self.writeDrLog(u'键值重复插入失败，报错信息：%s' %traceback.format_exc())        
+
     
+  #----------------------------------------------------------------------
+    def prodict(self, dictdata ):
+        """处理 dictdata 以便保存到 mongo""" 
+        dictdata.pop('rawData')
+        
+        #print dictdata
+        strDic = json.dumps( dictdata)
+        strDic = strDic.lower()
+        retDic = json.loads( strDic )
+        #print strDic
+ 
+        strTime = time.strftime("%Y-%m-%d", time.localtime())
+   
+        retDic['date'] = strTime
+        retDic['id'] = self.randomid()
+        return retDic
+        pass        
+
+    def randomid(self):
+        str = ""
+        for i in range(6):
+            ch = chr(random.randrange(ord('0'), ord('9') + 1))
+            str += ch
+        
+        return str    
+
     #----------------------------------------------------------------------
     def processLogEvent(self, event):
         """处理日志事件"""
@@ -591,7 +742,14 @@ class DataEngine(object):
     #----------------------------------------------------------------------
     def getAllContracts(self):
         """查询所有合约对象（返回列表）"""
-        return self.contractDict.values()
+        #此处加过滤   2019.5.24 hylas
+        contracts = self.contractDict.values()
+        ret_contracts = []
+        for connect in contracts :
+            if( connect.productClass == u'期货' ):
+                ret_contracts.append( connect ) 
+    
+        return ret_contracts
     
     #----------------------------------------------------------------------
     def saveContracts(self):
@@ -701,7 +859,8 @@ class DataEngine(object):
     def getError(self):
         """获取错误"""
         return self.errorList
-    
+
+     
 
 ########################################################################    
 class LogEngine(object):
@@ -1149,5 +1308,13 @@ class PositionDetail(object):
         # 其他情况则直接返回空
         return []
 
-
-        
+def getTime():
+    import time 
+    #获得当前时间时间戳 
+    now = int(time.time()) 
+    #转换为其他日期格式,如:"%Y-%m-%d %H:%M:%S" 
+    timeStruct = time.localtime(now) 
+    # strTime = time.strftime("%Y-%m-%d %H:%M:%S", timeStruct) 
+    strTime = time.strftime("%H:%M:%S", timeStruct) 
+       
+    return strTime

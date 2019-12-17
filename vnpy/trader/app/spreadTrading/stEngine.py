@@ -253,6 +253,7 @@ class StDataEngine(object):
         req.symbol = contract.symbol
         req.exchange = contract.exchange
         
+
         self.mainEngine.subscribe(req, contract.gatewayName)
         
     #----------------------------------------------------------------------

@@ -151,6 +151,10 @@ class VtGateway(object):
     def close(self):
         """关闭"""
         pass
+
+    def getSetting(self ):
+        """读配置文件"""
+        pass
     
     
     
